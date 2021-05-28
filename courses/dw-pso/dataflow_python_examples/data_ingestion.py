@@ -11,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""`data_ingestion.py` is a Dataflow pipeline which reads a file and writes its
-contents to a BigQuery table.
+"""`data_ingestion.py` is a Dataflow pipeline which reads a file and writes its contents to a BigQuery table.
 This example does not do any transformation on the data.
 """
 
@@ -28,8 +27,7 @@ class DataIngestion:
     """A helper class which contains the logic to translate the file into
     a format BigQuery will accept."""
     def parse_method(self, string_input):
-        """This method translates a single line of comma separated values to a
-        dictionary which can be loaded into BigQuery.
+        """This method translates a single line of comma separated values to a dictionary which can be loaded into BigQuery.
 
         Args:
             string_input: A comma separated list of values in the form of
@@ -51,11 +49,8 @@ class DataIngestion:
             }
          """
         # Strip out carriage return, newline and quote characters.
-        values = re.split(",",
-                          re.sub('\r\n', '', re.sub(u'"', '', string_input)))
-        row = dict(
-            zip(('state', 'gender', 'year', 'name', 'number', 'created_date'),
-                values))
+        values = re.split(",",re.sub('\r\n', '', re.sub(u'"', '', string_input)))
+        row = dict(zip(('state', 'gender', 'year', 'name', 'number', 'created_date'),values))
         return row
 
 
@@ -104,8 +99,7 @@ def run(argv=None):
      # processing starts with lines read from the file. We use the input
      # argument from the command line. We also skip the first line which is a
      # header row.
-     | 'Read from a File' >> beam.io.ReadFromText(known_args.input,
-                                                  skip_header_lines=1)
+     | 'Read from a File' >> beam.io.ReadFromText(known_args.input,skip_header_lines=1)
      # This stage of the pipeline translates from a CSV file single row
      # input as a string, to a dictionary object consumable by BigQuery.
      # It refers to a function we have written. This function will
@@ -126,6 +120,11 @@ def run(argv=None):
              create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED,
              # Deletes all data in the BigQuery table before writing.
              write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE)))
+    
+       #beam.Map(lambda s: data_ingestion.parse_method(s))
+       #Write to BigQuery' >> beam.io.Write( beam.io.BigQuerySink(         
+       #     known_args.output,   schema='state:STRING,gender:STRING,year:STRING,name:STRING,'number:STRING,created_date:STRING',
+       #    create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED, write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE)))
     p.run().wait_until_finish()
 
 
