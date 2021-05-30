@@ -58,14 +58,16 @@ public class AverageSpeeds {
     @Description("Simulation speedup factor. Use 1.0 if no speedup")
     @Default.Double(60.0)
     Double getSpeedupFactor();
-
     void setSpeedupFactor(Double d);
   }
+  
+  /*****************************************************************************/
 
   @SuppressWarnings("serial")
   public static void main(String[] args) {
     MyOptions options = PipelineOptionsFactory.fromArgs(args).withValidation().as(MyOptions.class);
     options.setStreaming(true);
+     /*****************************************************************************/
     Pipeline p = Pipeline.create(options);
 
     String topic = "projects/" + options.getProject() + "/topics/sandiego";
@@ -73,8 +75,7 @@ public class AverageSpeeds {
 
     // if we need to average over 60 minutes and speedup is 30x
     // then we need to average over 2 minutes of sped-up stream
-    Duration averagingInterval = Duration
-        .millis(Math.round(1000 * 60 * (options.getAveragingInterval() / options.getSpeedupFactor())));
+    Duration averagingInterval = Duration.millis(Math.round(1000 * 60 * (options.getAveragingInterval() / options.getSpeedupFactor())));
     Duration averagingFrequency = averagingInterval.dividedBy(2); // 2 times
     // in
     // window
@@ -82,6 +83,7 @@ public class AverageSpeeds {
     System.out.println("Averaging freq = " + averagingFrequency);
 
     // Build the table schema for the output table.
+    /*****************************************************************************/
     List<TableFieldSchema> fields = new ArrayList<>();
     fields.add(new TableFieldSchema().setName("timestamp").setType("TIMESTAMP"));
     fields.add(new TableFieldSchema().setName("latitude").setType("FLOAT"));
@@ -94,18 +96,16 @@ public class AverageSpeeds {
     TableSchema schema = new TableSchema().setFields(fields);
 
     PCollection<LaneInfo> currentConditions = p //
-        .apply("GetMessages", PubsubIO.readStrings().fromTopic(topic)) //
-        .apply("ExtractData", ParDo.of(new DoFn<String, LaneInfo>() {
+        .apply("GetMessages", PubsubIO.readStrings().fromTopic(topic)).apply("ExtractData", ParDo.of(new DoFn<String, LaneInfo>() {
           @ProcessElement
           public void processElement(ProcessContext c) throws Exception {
             String line = c.element();
             c.output(LaneInfo.newLaneInfo(line));
           }
         }));
-
+/*******************************************************************/
     PCollection<KV<String, Double>> avgSpeed = currentConditions //
-        .apply("TimeWindow",
-            Window.into(SlidingWindows//
+        .apply("TimeWindow",Window.into(SlidingWindows//
                 .of(averagingInterval)//
                 .every(averagingFrequency))) //
         .apply("BySensor", ParDo.of(new DoFn<LaneInfo, KV<String, Double>>() {
